@@ -1,0 +1,162 @@
+"""
+Este módulo proporciona una clase para manejar operaciones matemáticas básicas.
+Incluye funcionalidades para sumar, restar, multiplicar y dividir números.
+"""
+
+import math
+from typing import Union, List, Optional
+
+class CalculadoraBasica:
+    """
+    Una clase simple para realizar operaciones matemáticas básicas.
+    Puede manejar números enteros y flotantes.
+    """
+    
+    def __init__(self):
+        """
+        Inicializa una nueva instancia de CalculadoraBasica.
+        Configura el historial de operaciones en una lista vacía.
+        """
+        self.historial = []
+    
+    def sumar(self, a: Union[int, float], b: Union[int, float]) -> Union[int, float]:
+        """
+        Suma dos números y guarda la operación en el historial.
+        
+        Args:
+            a: Primer número a sumar.
+            b: Segundo número a sumar.
+            
+        Returns:
+            La suma de los dos números.
+            
+        Raises:
+            TypeError: Si los argumentos no son números.
+        """
+        if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+            raise TypeError("Ambos argumentos deben ser números")
+            
+        resultado = a + b
+        self.historial.append(f"Suma: {a} + {b} = {resultado}")
+        return resultado
+    
+    # Esta función resta el segundo número del primer número
+    def restar(self, a: Union[int, float], b: Union[int, float]) -> Union[int, float]:
+        """
+        Resta el segundo número del primer número.
+        
+        Args:
+            a: Minuendo (número del que se resta).
+            b: Sustraendo (número que se resta).
+            
+        Returns:
+            La diferencia entre a y b.
+        """
+        # Verificando si los argumentos son números
+        if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+            raise TypeError("Ambos argumentos deben ser números")
+            
+        resultado = a - b
+        self.historial.append(f"Resta: {a} - {b} = {resultado}")
+        return resultado
+    
+    def multiplicar(self, a: Union[int, float], b: Union[int, float]) -> Union[int, float]:
+        """
+        Multiplica dos números.
+        
+        Args:
+            a: Primer factor.
+            b: Segundo factor.
+            
+        Returns:
+            El producto de los dos números.
+        """
+        # Comprobando si los argumentos son números
+        if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+            raise TypeError("Ambos argumentos deben ser números")
+            
+        resultado = a * b
+        self.historial.append(f"Multiplicación: {a} * {b} = {resultado}")
+        return resultado
+    
+    # Esta función divide dos números
+    def dividir(self, a: Union[int, float], b: Union[int, float]) -> Union[int, float]:
+        """
+        Divide el primer número entre el segundo número.
+        
+        Args:
+            a: Dividendo.
+            b: Divisor.
+            
+        Returns:
+            El resultado de la división.
+            
+        Raises:
+            ValueError: Si el divisor es cero.
+        """
+        if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
+            raise TypeError("Ambos argumentos deben ser números")
+            
+        if b == 0:
+            raise ValueError("No se puede dividir por cero")
+            
+        resultado = a / b
+        self.historial.append(f"División: {a} / {b} = {resultado}")
+        return resultado
+    
+    # Obtener el historial de operaciones
+    def obtener_historial(self) -> List[str]:
+        """
+        Devuelve el historial de operaciones realizadas.
+        
+        Returns:
+            Una lista con todas las operaciones realizadas.
+        """
+        return self.historial
+    
+    # Limpiar el historial de operaciones
+    def limpiar_historial(self) -> None:
+        """
+        Limpia el historial de operaciones.
+        """
+        self.historial = []
+
+# Este es un comentario de nivel superior que necesita traducción
+def calcular_area_circulo(radio: Union[int, float]) -> Optional[Union[int, float]]:
+    """
+    Calcula el área de un círculo dado su radio.
+    
+    Args:
+        radio: El radio del círculo.
+        
+    Returns:
+        El área del círculo o None si el radio es negativo.
+    """
+    if radio < 0:
+        return None
+        
+    # Usando el módulo math para obtener el valor de pi
+    area = math.pi * radio ** 2
+    return area
+
+# Ejemplo de uso de las funciones
+if __name__ == "__main__":
+    calc = CalculadoraBasica()
+    
+    print("Suma:", calc.sumar(5, 3))
+    print("Resta:", calc.restar(10, 4))
+    print("Multiplicación:", calc.multiplicar(6, 7))
+    print("División:", calc.dividir(20, 5))
+    
+    # Imprimir historial de operaciones
+    print("\nHistorial de operaciones:")
+    for operacion in calc.obtener_historial():
+        print(operacion)
+        
+    # Calcular área del círculo
+    radio = 5
+    area = calcular_area_circulo(radio)
+    if area is not None:
+        print(f"\nEl área de un círculo con radio {radio} es: {area:.2f}")
+    else:
+        print("\nNo se puede calcular el área con un radio negativo")
