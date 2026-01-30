@@ -1,0 +1,171 @@
+# debug_utils.py
+
+```python
+"""
+Debugging and Logging Utilities
+
+This module provides enhanced debugging and logging capabilities for Python applications.
+It includes features like conditional printing based on environment, formatted output,
+and specialized debugging functions to improve code visibility and troubleshooting.
+"""
+
+import os
+import sys
+import functools
+import inspect
+import logging
+import time
+from typing import Any, Callable, Dict, Optional, Union
+
+# Configure logging
+LOG_LEVEL = os.getenv('DEBUG_LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+
+class DebugLogger:
+    """
+    A comprehensive debugging and logging utility class.
+    
+    Features:
+    - Environment-based conditional logging
+    - Function entry/exit tracking
+    - State change tracking
+    - Critical operation logging
+    - Performance timing
+    """
+    
+    def __init__(self, enabled: bool = None, verbose: bool = None):
+        """
+        Initialize the DebugLogger.
+        
+        Args:
+            enabled: Enable/disable logging. If None, checks DEBUG_ENABLED environment variable.
+            verbose: Enable verbose logging. If None, checks DEBUG_VERBOSE environment variable.
+        """
+        self.enabled = enabled if enabled is not None else os.getenv('DEBUG_ENABLED', 'false').lower() == 'true'
+        self.verbose = verbose if verbose is not None else os.getenv('DEBUG_VERBOSE', 'false').lower() == 'true'
+        self.performance_enabled = os.getenv('DEBUG_PERFORMANCE', 'false').lower() == 'true'
+    
+    def log_function_entry(self, func: Callable, *args, **kwargs) -> None:
+        """
+        Log entry to a function with arguments.
+        
+        Args:
+            func: The function being entered
+            *args: Positional arguments passed to the function
+            **kwargs: Keyword arguments passed to the function
+        """
+        if not self.enabled:
+            return
+            
+        func_name = func.__name__ if hasattr(func, '__name__') else str(func)
+        module_name = func.__module__ if hasattr(func, '__module__') else 'unknown'
+        
+        # Format arguments for logging
+        args_repr = [repr(a) for a in args]
+        kwargs_repr = [f"{k}={v!r}" for k, v in kwargs.items()]
+        signature = ", ".join(args_repr + kwargs_repr)
+        
+        logger.debug(f"[ENTRY] {module_name}.{func_name}({signature})")
+    
+    def log_function_exit(self, func: Callable, result: Any = None, exception: Exception = None) -> None:
+        """
+        Log exit from a function with result or exception.
+        
+        Args:
+            func: The function being exited
+            result: The return value of the function (if successful)
+            exception: The exception raised (if any)
+        """
+        if not self.enabled:
+            return
+            
+        func_name = func.__name__ if hasattr(func, '__name__') else str(func)
+        module_name = func.__module__ if hasattr(func, '__module__') else 'unknown'
+        
+        if exception:
+            logger.error(f"[EXIT] {module_name}.{func_name} raised exception: {str(exception)}")
+        else:
+            result_repr = repr(result)
+            if len(result_repr) > 100:  # Truncate long representations
+                result_repr = result_repr[:100] + "..."
+            logger.debug(f"[EXIT] {module_name}.{func_name} returned: {result_repr}")
+    
+    def log_state_change(self, object_name: str, property_name: str, old_value: Any, new_value: Any) -> None:
+        """
+        Log a state change in an object.
+        
+        Args:
+            object_name: Name of the object whose state changed
+            property_name: Name of the property that changed
+            old_value: Previous value of the property
+            new_value: New value of the property
+        """
+        if not self.enabled:
+            return
+            
+        old_repr = repr(old_value)
+        new_repr = repr(new_value)
+        
+        if len(old_repr) > 100:
+            old_repr = old_repr[:100] + "..."
+        if len(new_repr) > 100:
+            new_repr = new_repr[:100] + "..."
+            
+        logger.debug(f"[STATE] {object_name}.{property_name} changed from {old_repr} to {new_repr}")
+    
+    def log_operation(self, operation: str, details: Optional[Dict[str, Any]] = None) -> None:
+        """
+        Log a critical operation with optional details.
+        
+        Args:
+            operation: Description of the operation
+            details: Optional dictionary of operation details
+        """
+        if not self.enabled:
+            return
+            
+        if details:
+            details_str = ", ".join(f"{k}={v!r}" for k, v in details.items())
+            logger.info(f"[OPERATION] {operation}: {details_str}")
+        else:
+            logger.info(f"[OPERATION] {operation}")
+    
+    def log_condition(self, condition_name: str, condition_result: bool) -> None:
+        """
+        Log the evaluation of a condition.
+        
+        Args:
+            condition_name: Name or description of the condition
+            condition_result: Result of the condition evaluation (True/False)
+        """
+        if not self.enabled:
+            return
+            
+        logger.debug(f"[CONDITION] {condition_name} evaluated to {condition_result}")
+    
+    def log_performance(self, operation_name: str, duration: float) -> None:
+        """
+        Log performance metrics for an operation.
+        
+        Args:
+            operation_name: Name of the operation being timed
+            duration: Duration of the operation in seconds
+        """
+        if not self.enabled or not self.performance_enabled:
+            return
+            
+        logger.info(f"[PERFORMANCE] {operation_name} took {duration:.4f} seconds")
+    
+    def time_operation(self, operation_name: str) -> Callable:
+        """
+        Decorator to time and log the performance of an operation.
+        
+        Args:
+            operation_name: Name to
