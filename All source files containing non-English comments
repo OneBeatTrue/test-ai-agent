@@ -1,0 +1,303 @@
+#!/usr/bin/env python3
+"""
+Non-English Comment Identifier
+
+This script scans a codebase to identify all source files that contain non-English comments.
+It performs basic language detection on comments and reports files with non-English comments.
+"""
+
+import os
+import re
+import argparse
+from typing import List, Dict, Tuple, Set
+import chardet
+
+# Common source file extensions
+SOURCE_EXTENSIONS = {
+    '.py', '.java', '.js', '.ts', '.jsx', '.tsx', '.c', '.cpp', '.h', '.hpp',
+    '.cs', '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.scala', '.m', '.mm',
+    '.sh', '.bash', '.pl', '.lua', '.r', '.sql', '.html', '.css', '.scss',
+    '.xml', '.json', '.yaml', '.yml', '.md', '.txt'
+}
+
+# Keywords that might indicate comments in different languages
+COMMENT_KEYWORDS = {
+    'python': ['#'],
+    'java': ['//', '/*', '*'],
+    'javascript': ['//', '/*', '*'],
+    'typescript': ['//', '/*', '*'],
+    'c': ['//', '/*', '*'],
+    'cpp': ['//', '/*', '*'],
+    'csharp': ['//', '/*', '*'],
+    'go': ['//', '/*', '*'],
+    'rust': ['//', '/*', '*'],
+    'ruby': ['#'],
+    'php': ['//', '#', '/*', '*'],
+    'swift': ['//', '/*', '*'],
+    'kotlin': ['//', '/*', '*'],
+    'scala': ['//', '/*', '*'],
+    'objective-c': ['//', '/*', '*'],
+    'shell': ['#'],
+    'perl': ['#'],
+    'lua': ['--', '--[[', '--]]'],
+    'r': ['#'],
+    'sql': ['--', '/*', '*'],
+    'html': ['<!--'],
+    'css': ['/*', '*'],
+    'scss': ['/*', '*'],
+    'xml': ['<!--'],
+    'yaml': ['#'],
+    'markdown': ['<!--']
+}
+
+# Basic English words for language detection
+ENGLISH_WORDS = {
+    'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for',
+    'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this', 'but', 'his',
+    'by', 'from', 'they', 'we', 'say', 'her', 'she', 'or', 'an', 'will', 'my',
+    'one', 'all', 'would', 'there', 'their', 'what', 'so', 'up', 'out', 'if',
+    'about', 'who', 'get', 'which', 'go', 'me', 'when', 'make', 'can', 'like',
+    'time', 'no', 'just', 'him', 'know', 'take', 'people', 'into', 'year', 'your',
+    'good', 'some', 'could', 'them', 'see', 'other', 'than', 'then', 'now', 'look',
+    'only', 'come', 'its', 'over', 'think', 'also', 'back', 'after', 'use', 'two',
+    'how', 'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'because',
+    'any', 'these', 'give', 'day', 'most', 'us', 'is', 'was', 'are', 'been', 'has',
+    'had', 'were', 'said', 'did', 'get', 'may', 'am', 'an', 'as', 'at', 'be',
+    'by', 'do', 'for', 'from', 'has', 'have', 'he', 'in', 'is', 'it', 'its',
+    'of', 'on', 'that', 'the', 'to', 'was', 'were', 'will', 'with', 'function',
+    'class', 'def', 'if', 'else', 'for', 'while', 'return', 'import', 'from',
+    'public', 'private', 'protected', 'static', 'final', 'const', 'var', 'let',
+    'const', 'int', 'float', 'double', 'char', 'string', 'boolean', 'true', 'false',
+    'null', 'undefined', 'void', 'package', 'interface', 'extends', 'implements',
+    'try', 'catch', 'finally', 'throw', 'throws', 'new', 'this', 'super', 'break',
+    'continue', 'case', 'switch', 'default', 'if', 'else if', 'else', 'for', 'while',
+    'do', 'return', 'yield', 'async', 'await', 'promise', 'then', 'catch', 'finally'
+}
+
+# Non-Latin scripts that are likely not English
+NON_LATIN_SCRIPTS = {
+    'arabic', 'chinese', 'japanese', 'korean', 'russian', 'cyrillic', 
+    'devanagari', 'thai', 'hebrew', 'arabic', 'hindi', 'bengali', 'tamil',
+    'telugu', 'greek', 'thai', 'vietnamese', 'persian', 'urdu'
+}
+
+def detect_file_encoding(file_path: str) -> str:
+    """Detect the encoding of a file."""
+    with open(file_path, 'rb') as f:
+        raw_data = f.read(1024)  # Read first 1KB for detection
+        result = chardet.detect(raw_data)
+        return result['encoding'] or 'utf-8'
+
+def is_english_text(text: str) -> bool:
+    """
+    Basic heuristic to determine if text is likely English.
+    This is a simple implementation and may not be 100% accurate.
+    """
+    # Check for non-Latin characters
+    if any(ord(char) > 127 for char in text):
+        # Check if these characters are from common non-Latin scripts
+        normalized_text = text.lower()
+        for script in NON_LATIN_SCRIPTS:
+            if script in normalized_text:
+                return False
+    
+    # Count English words in the text
+    words = re.findall(r'\b\w+\b', text.lower())
+    if not words:
+        return True  # Empty or no words, assume neutral
+    
+    english_word_count = sum(1 for word in words if word in ENGLISH_WORDS)
+    ratio = english_word_count / len(words)
+    
+    # If more than 40% of words are common English words, consider it English
+    return ratio > 0.4
+
+def extract_comments(file_path: str, file_extension: str) -> List[str]:
+    """Extract comments from a source file based on its extension."""
+    comments = []
+    encoding = detect_file_encoding(file_path)
+    
+    try:
+        with open(file_path, 'r', encoding=encoding) as f:
+            content = f.read()
+            
+        if file_extension == '.py':
+            # Python: # for single line, """ or ''' for multi-line
+            single_line_comments = re.findall(r'#.*', content)
+            multi_line_comments = re.findall(r'(""".*?""")|(\'\'\'.*?\'\'\')', content, re.DOTALL)
+            comments.extend(single_line_comments)
+            comments.extend([match[0] or match[1] for match in multi_line_comments])
+            
+        elif file_extension in ['.java', '.js', '.ts', '.jsx', '.tsx', '.c', '.cpp', '.h', '.hpp', 
+                               '.cs', '.go', '.rs', '.php', '.swift', '.kt', '.scala', '.m', '.mm']:
+            # C-style languages: // for single line, /* */ for multi-line
+            single_line_comments = re.findall(r'//.*', content)
+            multi_line_comments = re.findall(r'/\*.*?\*/', content, re.DOTALL)
+            comments.extend(single_line_comments)
+            comments.extend(multi_line_comments)
+            
+        elif file_extension in ['.rb', '.sh', '.bash', '.pl']:
+            # Ruby and shell: # for comments
+            comments = re.findall(r'#.*', content)
+            
+        elif file_extension == '.lua':
+            # Lua: -- for single line, --[[ --]] for multi-line
+            single_line_comments = re.findall(r'--.*', content)
+            multi_line_comments = re.findall(r'--\[.*?\]', content, re.DOTALL)
+            comments.extend(single_line_comments)
+            comments.extend(multi_line_comments)
+            
+        elif file_extension == '.r':
+            # R: # for comments
+            comments = re.findall(r'#.*', content)
+            
+        elif file_extension == '.sql':
+            # SQL: -- for single line, /* */ for multi-line
+            single_line_comments = re.findall(r'--.*', content)
+            multi_line_comments = re.findall(r'/\*.*?\*/', content, re.DOTALL)
+            comments.extend(single_line_comments)
+            comments.extend(multi_line_comments)
+            
+        elif file_extension in ['.html', '.xml']:
+            # HTML/XML: <!-- -->
+            comments = re.findall(r'<!--.*?-->', content, re.DOTALL)
+            
+        elif file_extension in ['.css', '.scss']:
+            # CSS: /* */
+            comments = re.findall(r'/\*.*?\*/', content, re.DOTALL)
+            
+        elif file_extension in ['.yaml', '.yml']:
+            # YAML: # for comments
+            comments = re.findall(r'#.*', content)
+            
+    except Exception as e:
+        print(f"Error reading file {file_path}: {str(e)}")
+    
+    return comments
+
+def scan_directory(directory: str) -> Dict[str, List[str]]:
+    """Scan a directory for source files with non-English comments."""
+    files_with_non_english_comments = {}
+    
+    for root, _, files in os.walk(directory):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_extension = os.path.splitext(file)[1].lower()
+            
+            if file_extension in SOURCE_EXTENSIONS:
+                comments = extract_comments(file_path, file_extension)
+                non_english_comments = []
+                
+                for comment in comments:
+                    # Skip empty whitespace-only comments
+                    if not comment.strip():
+                        continue
+                    
+                    # Check if comment is likely not in English
+                    if not is_english_text(comment.strip()):
+                        non_english_comments.append(comment.strip())
+                
+                if non_english_comments:
+                    files_with_non_english_comments[file_path] = non_english_comments
+    
+    return files_with_non_english_comments
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Identify source files with non-English comments in a codebase.'
+    )
+    parser.add_argument(
+        'directory',
+        help='Directory to scan for source files with non-English comments'
+    )
+    parser.add_argument(
+        '--output',
+        help='Output file to save the results (optional)',
+        default=None
+    )
+    parser.add_argument(
+        '--verbose',
+        help='Enable verbose output',
+        action='store_true'
+    )
+    
+    args = parser.parse_args()
+    
+    if not os.path.isdir(args.directory):
+        print(f"Error: Directory '{args.directory}' does not exist.")
+        return
+    
+    print(f"Scanning directory: {args.directory}")
+    files_with_non_english_comments = scan_directory(args.directory)
+    
+    if not files_with_non_english_comments:
+        print("No files with non-English comments found.")
+        return
+    
+    print("\nFiles with non-English comments:")
+    print("=" * 50)
+    
+    output_lines = []
+    for file_path, comments in files_with_non_english_comments.items():
+        print(f"\nFile: {file_path}")
+        output_lines.append(f"File: {file_path}")
+        
+        for i, comment in enumerate(comments, 1):
+            print(f"  {i}. {comment}")
+            output_lines.append(f"  {i}. {comment}")
+        
+        if args.verbose:
+            print(f"  Total non-English comments: {len(comments)}")
+            output_lines.append(f"  Total non-English comments: {len(comments)}")
+    
+    total_files = len(files_with_non_english_comments)
+    total_comments = sum(len(comments) for comments in files_with_non_english_comments.values())
+    
+    print("\n" + "=" * 50)
+    print(f"Summary:")
+    print(f"  Files with non-English comments: {total_files}")
+    print(f"  Total non-English comments: {total_comments}")
+    output_lines.append("")
+    output_lines.append("Summary:")
+    output_lines.append(f"  Files with non-english comments: {total_files}")
+    output_lines.append(f"  Total non-english comments: {total_comments}")
+    
+    if args.output:
+        try:
+            with open(args.output, 'w', encoding='utf-8') as f:
+                f.write('\n'.join(output_lines))
+            print(f"\nResults saved to: {args.output}")
+        except Exception as e:
+            print(f"Error saving results to file: {str(e)}")
+
+if __name__ == "__main__":
+    main()
+```
+
+This script provides a comprehensive solution to identify all source files containing non-English comments in a codebase. Here's how it works:
+
+1. **Scans Source Files**: The script walks through a specified directory and identifies files with common source code extensions.
+
+2. **Detects Comments**: For each file, it extracts comments based on the file type:
+   - Python: `#` for single-line, `"""` or `'''` for multi-line
+   - C-style languages: `//` for single-line, `/* */` for multi-line
+   - HTML/XML: `<!-- -->`
+   - CSS: `/* */`
+   - Shell scripts: `#`
+   - And many more
+
+3. **Language Detection**: It uses a heuristic approach to determine if comments are in English:
+   - Checks for non-Latin characters
+   - Compares words against a set of common English words
+   - Calculates the ratio of English words in each comment
+
+4. **Reporting**: The script outputs a list of files with non-English comments and the specific comments found.
+
+5. **Command-Line Interface**: It accepts command-line arguments for specifying the directory to scan, an optional output file, and verbose mode.
+
+To use this script:
+1. Save it as `find_non_english_comments.py`
+2. Run it with: `python find_non_english_comments.py /path/to/codebase`
+3. Optionally: `python find_non_english_comments.py /path/to/codebase --output results.txt --verbose`
+
+Note that this is a basic implementation and may not be 100% accurate for all cases, especially for technical jargon or comments with mixed languages. For more accurate results, consider integrating with professional translation APIs or language detection services.
