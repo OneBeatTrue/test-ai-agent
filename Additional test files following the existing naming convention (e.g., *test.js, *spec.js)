@@ -1,0 +1,153 @@
+/**
+ * Additional test coverage for application components
+ * 
+ * This file contains comprehensive tests for core application functionality,
+ * including edge cases, error scenarios, and component interactions.
+ */
+
+const { 
+  authService, 
+  userService, 
+  notificationService,
+  dataProcessor 
+} = require('../services');
+const { DatabaseError } = require('../errors/databaseError');
+const { ValidationError } = require('../errors/validationError');
+const { AuthenticationError } = require('../errors/authenticationError');
+
+// Mock dependencies
+jest.mock('../services/notificationService');
+jest.mock('../repositories/userRepository');
+jest.mock('../repositories/dataRepository');
+
+describe('Application Component Tests', () => {
+  let mockNotificationService;
+  let mockUserRepository;
+  let mockDataRepository;
+
+  beforeEach(() => {
+    // Initialize mocks
+    mockNotificationService = require('../services/notificationService');
+    mockUserRepository = require('../repositories/userRepository');
+    mockDataRepository = require('../repositories/dataRepository');
+    
+    // Reset all mocks
+    jest.clearAllMocks();
+  });
+
+  describe('Authentication Service', () => {
+    describe('login', () => {
+      it('should authenticate user with valid credentials', async () => {
+        // Arrange
+        const loginData = {
+          username: 'testuser',
+          password: 'password123'
+        };
+        const user = {
+          id: '1',
+          username: 'testuser',
+          passwordHash: 'hashedpassword',
+          isActive: true
+        };
+        mockUserRepository.findByUsername.mockResolvedValue(user);
+        
+        // Mock bcrypt compare
+        jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(true);
+        
+        // Act
+        const result = await authService.login(loginData);
+        
+        // Assert
+        expect(result).toHaveProperty('token');
+        expect(result).toHaveProperty('user');
+        expect(result.user.id).toBe(user.id);
+        expect(mockNotificationService.sendLoginNotification).toHaveBeenCalledWith(user.id);
+      });
+
+      it('should throw AuthenticationError for invalid credentials', async () => {
+        // Arrange
+        const loginData = {
+          username: 'testuser',
+          password: 'wrongpassword'
+        };
+        const user = {
+          id: '1',
+          username: 'testuser',
+          passwordHash: 'hashedpassword',
+          isActive: true
+        };
+        mockUserRepository.findByUsername.mockResolvedValue(user);
+        
+        // Mock bcrypt compare
+        jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(false);
+        
+        // Act & Assert
+        await expect(authService.login(loginData)).rejects.toThrow(AuthenticationError);
+        expect(mockNotificationService.sendLoginNotification).not.toHaveBeenCalled();
+      });
+
+      it('should throw ValidationError for missing username or password', async () => {
+        // Act & Assert
+        await expect(authService.login({ username: '' })).rejects.toThrow(ValidationError);
+        await expect(authService.login({ password: '' })).rejects.toThrow(ValidationError);
+        await expect(authService.login({})).rejects.toThrow(ValidationError);
+      });
+
+      it('should throw AuthenticationError for inactive user account', async () => {
+        // Arrange
+        const loginData = {
+          username: 'testuser',
+          password: 'password123'
+        };
+        const user = {
+          id: '1',
+          username: 'testuser',
+          passwordHash: 'hashedpassword',
+          isActive: false
+        };
+        mockUserRepository.findByUsername.mockResolvedValue(user);
+        
+        // Mock bcrypt compare
+        jest.spyOn(require('bcrypt'), 'compare').mockResolvedValue(true);
+        
+        // Act & Assert
+        await expect(authService.login(loginData)).rejects.toThrow(AuthenticationError);
+        expect(mockNotificationService.sendLoginNotification).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('logout', () => {
+      it('should successfully log out user', async () => {
+        // Arrange
+        const token = 'valid.jwt.token';
+        const userId = '1';
+        
+        // Mock token validation
+        jest.spyOn(require('jsonwebtoken'), 'verify').mockReturnValue({ userId });
+        
+        // Act
+        await authService.logout(token);
+        
+        // Assert
+        // Verify token was added to blacklist (implementation depends on your JWT blacklist mechanism)
+        expect(mockDataRepository.addToBlacklist).toHaveBeenCalledWith(token);
+      });
+
+      it('should handle logout with invalid token gracefully', async () => {
+        // Arrange
+        const token = 'invalid.token';
+        
+        // Mock token validation to throw error
+        jest.spyOn(require('jsonwebtoken'), 'verify').mockImplementation(() => {
+          throw new Error('Invalid token');
+        });
+        
+        // Act & Assert
+        await expect(authService.logout(token)).resolves.not.toThrow();
+      });
+    });
+  });
+
+  describe('User Service', () => {
+    describe('createUser', () => {
+      it('should create a new user successfully', async
