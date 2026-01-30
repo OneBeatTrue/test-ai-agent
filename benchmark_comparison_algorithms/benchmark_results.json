@@ -1,0 +1,230 @@
+{
+  "timestamp": "2026-01-06 10:50:19",
+  "config": {
+    "total_quests": 27,
+    "total_users": 50,
+    "test_users": 20
+  },
+  "algorithms": {
+    "Content-Based BERT": {
+      "info": {
+        "name": "Content-Based BERT",
+        "type": "content_based",
+        "model": "paraphrase-multilingual-MiniLM-L12-v2",
+        "embedding_dim": 384,
+        "description": "Контентная фильтрация на основе BERT эмбеддингов"
+      },
+      "metrics": {
+        "precision@k": 0.53,
+        "precision@k_std": 0.28478061731796284,
+        "recall@k": 0.88125,
+        "recall@k_std": 0.30484370995643,
+        "f1@k": 0.6289377289377289,
+        "f1@k_std": 0.2772388471064162,
+        "ndcg@k": 0.9,
+        "ndcg@k_std": 0.30000000000000004,
+        "map@k": 0.9,
+        "map@k_std": 0.30000000000000004
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    },
+    "Collaborative KNN (k=5)": {
+      "info": {
+        "name": "Collaborative KNN (k=5)",
+        "type": "collaborative",
+        "n_neighbors": 5,
+        "description": "Коллаборативная фильтрация на основе пользовательских предпочтений"
+      },
+      "metrics": {
+        "precision@k": 0.1,
+        "precision@k_std": 0.161245154965971,
+        "recall@k": 0.19374999999999998,
+        "recall@k_std": 0.32174518687585335,
+        "f1@k": 0.11613247863247864,
+        "f1@k_std": 0.16981907341842015,
+        "ndcg@k": 0.21030716892474927,
+        "ndcg@k_std": 0.3426300831196236,
+        "map@k": 0.17729166666666668,
+        "map@k_std": 0.3217990741087087
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    },
+    "Collaborative KNN (k=10)": {
+      "info": {
+        "name": "Collaborative KNN (k=10)",
+        "type": "collaborative",
+        "n_neighbors": 10,
+        "description": "Коллаборативная фильтрация на основе пользовательских предпочтений"
+      },
+      "metrics": {
+        "precision@k": 0.15000000000000002,
+        "precision@k_std": 0.18841443681416772,
+        "recall@k": 0.26249999999999996,
+        "recall@k_std": 0.3121108688342084,
+        "f1@k": 0.17243589743589743,
+        "f1@k_std": 0.18088474517382258,
+        "ndcg@k": 0.2496796194344464,
+        "ndcg@k_std": 0.3323280117689634,
+        "map@k": 0.1934861111111111,
+        "map@k_std": 0.32031898977165457
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    },
+    "Hybrid (CB:0.5, CF:0.5)": {
+      "info": {
+        "name": "Hybrid (CB:0.5, CF:0.5)",
+        "type": "hybrid",
+        "content_weight": 0.5,
+        "collaborative_weight": 0.5,
+        "description": "Гибридный алгоритм, объединяющий контентную и коллаборативную фильтрацию"
+      },
+      "metrics": {
+        "precision@k": 0.4000000000000001,
+        "precision@k_std": 0.2280350850198276,
+        "recall@k": 0.6691666666666666,
+        "recall@k_std": 0.333094706252341,
+        "f1@k": 0.47652319902319906,
+        "f1@k_std": 0.2376447622247888,
+        "ndcg@k": 0.5341544326438044,
+        "ndcg@k_std": 0.2988948559045833,
+        "map@k": 0.4259861111111111,
+        "map@k_std": 0.30016423584420954
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    },
+    "Hybrid (CB:0.6, CF:0.4)": {
+      "info": {
+        "name": "Hybrid (CB:0.6, CF:0.4)",
+        "type": "hybrid",
+        "content_weight": 0.6,
+        "collaborative_weight": 0.4,
+        "description": "Гибридный алгоритм, объединяющий контентную и коллаборативную фильтрацию"
+      },
+      "metrics": {
+        "precision@k": 0.45,
+        "precision@k_std": 0.2519920633670831,
+        "recall@k": 0.7670833333333332,
+        "recall@k_std": 0.3043489750452778,
+        "f1@k": 0.5356043956043957,
+        "f1@k_std": 0.24111905023987537,
+        "ndcg@k": 0.6066537192011847,
+        "ndcg@k_std": 0.2749769409798915,
+        "map@k": 0.5005694444444445,
+        "map@k_std": 0.2893164367586185
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    },
+    "Hybrid (CB:0.8, CF:0.2)": {
+      "info": {
+        "name": "Hybrid (CB:0.8, CF:0.2)",
+        "type": "hybrid",
+        "content_weight": 0.8,
+        "collaborative_weight": 0.2,
+        "description": "Гибридный алгоритм, объединяющий контентную и коллаборативную фильтрацию"
+      },
+      "metrics": {
+        "precision@k": 0.51,
+        "precision@k_std": 0.2643860813280457,
+        "recall@k": 0.85875,
+        "recall@k_std": 0.3036522476452298,
+        "f1@k": 0.6078266178266178,
+        "f1@k_std": 0.2601670564664438,
+        "ndcg@k": 0.8334122843582008,
+        "ndcg@k_std": 0.29489860970619514,
+        "map@k": 0.7874444444444444,
+        "map@k_std": 0.2992688827752242
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    },
+    "Simple TF-IDF": {
+      "info": {
+        "name": "Simple TF-IDF",
+        "type": "tfidf",
+        "max_features": 1000,
+        "description": "Простой алгоритм на основе TF-IDF векторизации"
+      },
+      "metrics": {
+        "precision@k": 0.14,
+        "precision@k_std": 0.16852299546352717,
+        "recall@k": 0.26,
+        "recall@k_std": 0.3530974055098363,
+        "f1@k": 0.16705128205128206,
+        "f1@k_std": 0.2027217686736982,
+        "ndcg@k": 0.23521640406337588,
+        "ndcg@k_std": 0.34335167973464054,
+        "map@k": 0.18763888888888888,
+        "map@k_std": 0.33420513886785014
+      },
+      "friend_metrics": {
+        "friend_precision@k": 1.0,
+        "friend_precision@k_std": 0.0,
+        "friend_recall@k": 0.29999999999999993,
+        "friend_recall@k_std": 5.551115123125783e-17,
+        "friend_f1@k": 0.4615384615384615,
+        "friend_f1@k_std": 0.0,
+        "friend_map@k": 1.0,
+        "friend_map@k_std": 0.0
+      }
+    }
+  },
+  "summary": {
+    "best_algorithm": "Content-Based BERT",
+    "best_f1_score": 0.6289377289377289,
+    "best_friend_algorithm": "Content-Based BERT",
+    "best_friend_f1_score": 0.4615384615384615
+  }
+}
